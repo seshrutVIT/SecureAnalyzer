@@ -131,8 +131,9 @@ When a `group` column (project, commit or CVE id) is present, a group-wise train
 ## Screenshots
 
 <!-- Add screenshots here, for example:
-![Scanner output](image.png)
 -->
+
+![Scanner output](./image.png)
 
 ## Team
 
