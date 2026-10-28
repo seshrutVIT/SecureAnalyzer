@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Vulnerability Scanner</title>
+<style>
+:root{--bg:#eceae4;--panel:#f7f6f2;--alt:#efede6;--ink:#1d1f23;--mut:#666a72;--line:#cdc9bd;--acc:#1f5f5b;--accink:#fff;--red:#b3321f;--redbg:rgba(192,57,43,.15);--yel:#7a5700;--yelbg:rgba(214,163,20,.22);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#111317;--panel:#181b20;--alt:#1e2229;--ink:#e7e5df;--mut:#8e939b;--line:#2c3139;--acc:#56b8ad;--accink:#0c1514;--red:#ef7766;--redbg:rgba(239,119,102,.17);--yel:#e0b94a;--yelbg:rgba(224,185,74,.15);color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.4 "Segoe UI",system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr auto}
+.mono,code,.row{font-family:"Cascadia Mono",Consolas,ui-monospace,monospace}
+button,input{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--mut)}
+button.pri{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+button.on{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+button:focus-visible,input:focus-visible,.sw input:focus-visible+i{outline:2px solid var(--acc);outline-offset:2px}
+header{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:15px;margin:0 10px 0 0;font-weight:600;white-space:nowrap}
+#path{flex:1;min-width:120px;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:6px 8px}
+main{display:grid;grid-template-columns:290px 1fr;min-height:0}
+aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.box{padding:12px 14px;border-bottom:1px solid var(--line)}
+.box h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 10px;font-weight:600}
+.line{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0}
+.sw{position:relative;display:inline-block;width:36px;height:20px}
+.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.sw i{position:absolute;inset:0;border:1px solid var(--mut);border-radius:3px;background:var(--bg)}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:1px;background:var(--mut);transition:left .12s}
+.sw input:checked+i{background:var(--acc);border-color:var(--acc)}
+.sw input:checked+i::after{left:19px;background:var(--accink)}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.small{font-size:12px;color:var(--mut)}
+.small.err{color:var(--red)}
+#files{overflow:auto;flex:1;padding:4px 0}
+.f{display:flex;justify-content:space-between;gap:8px;padding:5px 14px;cursor:pointer;border-left:3px solid transparent}
+.f:hover{background:var(--alt)}
+.f.sel{background:var(--alt);border-left-color:var(--acc)}
+.f span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cnt{font-size:12px;padding:0 6px;border:1px solid var(--red);color:var(--red);border-radius:2px}
+.cnt.ok{border-color:var(--line);color:var(--mut)}
+section.work{display:grid;grid-template-rows:1fr 40%;min-height:0;min-width:0}
+.viewer{display:flex;flex-direction:column;min-height:0;min-width:0}
+.vh{display:flex;gap:16px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.vh .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.key{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:5px;border:1px solid var(--line)}
+#code{flex:1;overflow:auto;background:var(--bg);font-size:13px}
+#rows{min-width:max-content}
+.row{display:flex;white-space:pre;tab-size:4}
+.row .no{width:54px;flex:none;text-align:right;padding-right:10px;color:var(--mut);user-select:none}
+.row .mk{width:18px;flex:none;color:var(--red);font-weight:700;user-select:none}
+.row.hit{background:var(--redbg)}
+.row.warn{background:var(--yelbg)}
+.row.flash{outline:2px solid var(--acc);outline-offset:-2px}
+.note{margin-left:24px;color:var(--red);font-style:italic}
+.empty{padding:40px;color:var(--mut)}
+.panel{border-top:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.ph{padding:8px 14px;display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
+.tw{overflow:auto;flex:1}
+table{border-collapse:collapse;width:100%}
+th{position:sticky;top:0;background:var(--alt);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);padding:6px 12px;border-bottom:1px solid var(--line)}
+td{padding:5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--alt)}
+.tag{font-size:12px;padding:1px 6px;border:1px solid;border-radius:2px;white-space:nowrap}
+.t-rules{color:var(--acc);border-color:var(--acc)}
+.t-model{color:var(--yel);border-color:var(--yel)}
+.t-rules\+model{color:var(--red);border-color:var(--red)}
+.bar{display:inline-block;height:6px;background:var(--red);vertical-align:middle;margin-right:6px}
+footer{padding:5px 14px;border-top:1px solid var(--line);background:var(--panel);display:flex;justify-content:space-between}
+@media (max-width:860px){main{grid-template-columns:1fr}aside{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Python Vulnerability Scanner</h1>
+  <button id="bFile">Open file</button>
+  <button id="bDir">Open folder</button>
+  <input id="path" placeholder="or type a file or folder path and press Enter" spellcheck="false">
+  <button id="bScan" class="pri">Scan</button>
+  <button id="bWatch" title="Rescan automatically when files are saved">Watch mode: off</button>
+</header>
+<main>
+  <aside>
+    <div class="box">
+      <h2>Scan settings</h2>
+      <div class="line"><label for="rules">Rules only</label><label class="sw"><input id="rules" type="checkbox"><i></i></label></div>
+      <div class="line"><label for="thr">Model threshold</label><b id="thrv" class="mono">0.50</b></div>
+      <input id="thr" type="range" min="0.05" max="0.95" step="0.01" value="0.5">
+      <div class="line"><label for="model">Model file</label></div>
+      <input id="model" value="model.joblib" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:5px 8px" spellcheck="false">
+      <div id="minfo" class="small" style="margin-top:8px"></div>
+    </div>
+    <div class="box" style="border-bottom:0;padding-bottom:4px"><h2 id="fh">Files</h2></div>
+    <div id="files"></div>
+  </aside>
+  <section class="work">
+    <div class="viewer">
+      <div class="vh"><span class="name" id="vname">No file selected</span>
+        <span class="small"><span class="key" style="background:var(--redbg)"></span>Rule evidence</span>
+        <span class="small"><span class="key" style="background:var(--yelbg)"></span>Model flagged function</span></div>
+      <div id="code"><div class="empty">Open a Python file or a folder to start scanning.</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><b>Findings</b><span id="sum" class="small"></span></div>
+      <div class="tw"><table><thead><tr><th>File</th><th>Line</th><th>Function</th><th>Issue</th><th>Method</th><th title="Model probability for the containing function">Risk score</th></tr></thead><tbody id="rowsT"></tbody></table></div>
+    </div>
+  </section>
+</main>
+<footer><span id="status" class="small">Ready</span><span class="small">Runs locally on 127.0.0.1</span></footer>
+<script>
+const $=s=>document.querySelector(s);
+const S={path:"",data:null,cur:null,watch:null,sig:null,busy:false,again:false,info:{available:false}};
+const esc=t=>t.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+async function api(u,b){const r=await fetch(u,b?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}:{});const j=await r.json();if(!r.ok)throw new Error(j.error||r.statusText);return j}
+const status=(t,err)=>{const e=$("#status");e.textContent=t;e.className="small"+(err?" err":"")};
+const now=()=>new Date().toLocaleTimeString();
+
+async function loadInfo(first){
+  const i=await api("/api/info?model="+encodeURIComponent($("#model").value));S.info=i;
+  const r=$("#rules");
+  if(!i.available){r.checked=true;r.disabled=true;$("#minfo").textContent=i.error+". Using rules only.";$("#minfo").className="small err"}
+  else{r.disabled=false;$("#minfo").className="small";$("#minfo").textContent="Model loaded. Trained threshold "+i.threshold.toFixed(2)+".";
+    if(first){const v=Math.max(i.threshold,.5);$("#thr").value=v;$("#thrv").textContent=v.toFixed(2)}}
+  $("#thr").disabled=r.checked;
+}
+async function scan(){
+  if(!S.path)return status("Choose a file or folder first",1);
+  if(S.busy){S.again=true;return}
+  S.busy=true;status("Scanning...");
+  try{
+    const d=await api("/api/scan",{path:S.path,rules_only:$("#rules").checked,threshold:+$("#thr").value,model:$("#model").value});
+    S.data=d;S.sig=d.sig;
+    if(!S.cur||!d.files.some(f=>f.path===S.cur))S.cur=(d.files.find(f=>f.results.length)||d.files[0]||{}).path||null;
+    renderFiles();renderTable();await showFile(S.cur,null,true);
+    status("Scanned "+d.files.length+" file(s) in "+d.total_ms.toFixed(0)+" ms at "+now()+(d.model_used?"":" (rules only)"));
+  }catch(e){status(e.message,1)}
+  S.busy=false;if(S.again){S.again=false;scan()}
+}
+function renderFiles(){
+  const fs=S.data.files;$("#fh").textContent="Files ("+fs.length+")";
+  $("#files").innerHTML=fs.map(f=>{const n=f.results.length;
+    return `<div class="f${f.path===S.cur?" sel":""}" data-p="${esc(f.path)}" title="${esc(f.path)}"><span>${esc(f.rel)}</span>${f.error?'<span class="small">error</span>':`<span class="cnt${n?"":" ok"}">${n}</span>`}</div>`}).join("");
+}
+async function showFile(p,line,keep){
+  if(!p){$("#vname").textContent="No file selected";$("#code").innerHTML='<div class="empty">No Python files found.</div>';return}
+  S.cur=p;renderFiles();
+  const f=S.data.files.find(x=>x.path===p),box=$("#code"),top=keep?box.scrollTop:0;
+  $("#vname").textContent=p+(f.error?"   ["+f.error+"]":"");
+  let text;try{text=(await api("/api/file?path="+encodeURIComponent(p))).text}catch(e){return status(e.message,1)}
+  const hit={},warn=new Set();
+  f.results.forEach(r=>{if(r.by.includes("model"))for(let l=r.line;l<=r.end;l++)warn.add(l);
+    r.evidence.forEach(e=>(hit[e.line]=hit[e.line]||[]).push(e.message))});
+  box.innerHTML='<div id="rows">'+text.replace(/\r\n/g,"\n").split("\n").map((t,i)=>{const n=i+1,h=hit[n];
+    return `<div class="row${h?" hit":warn.has(n)?" warn":""}" id="L${n}"${h?` title="${esc(h.join("\n"))}"`:""}><span class="no">${n}</span><span class="mk">${h?"!":""}</span><code>${esc(t)||" "}</code>${h?`<span class="note">${esc(h.join(" | "))}</span>`:""}</div>`}).join("")+"</div>";
+  if(line){const el=$("#L"+line);if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1400)}}
+  else box.scrollTop=top;
+}
+function renderTable(){
+  const rows=[];
+  S.data.files.forEach(f=>f.results.forEach(r=>{
+    const risk=r.score==null?null:r.score;
+    if(r.evidence.length)r.evidence.forEach(e=>rows.push({f,line:e.line,fn:r.function,msg:e.family+": "+e.message,by:r.by,risk}));
+    else rows.push({f,line:r.line,fn:r.function,msg:"Model score above threshold, no rule evidence",by:r.by,risk})}));
+  const nf=new Set(rows.map(r=>r.f.path+r.fn)).size;
+  $("#sum").textContent=rows.length+" finding(s) in "+nf+" function(s), "+S.data.files.length+" file(s)";
+  $("#rowsT").innerHTML=rows.length?rows.map(r=>{const m=r.by==="rules+model"?"Both":r.by==="rules"?"Rules":"Model";
+    return `<tr data-p="${esc(r.f.path)}" data-l="${r.line}"><td>${esc(r.f.rel)}</td><td class="mono">${r.line}</td><td class="mono">${esc(r.fn)}()</td><td>${esc(r.msg)}</td><td><span class="tag t-${r.by}">${m}</span></td><td class="mono">${r.risk==null?"n/a":`<span class="bar" style="width:${Math.round(r.risk*40)}px"></span>${r.risk.toFixed(2)}`}</td></tr>`}).join(""):'<tr><td colspan="6" class="small">No vulnerabilities flagged.</td></tr>';
+}
+async function browse(kind){try{const r=await api("/api/browse",{kind});if(r.path){S.path=r.path;$("#path").value=r.path;S.cur=null;scan()}}catch(e){status(e.message,1)}}
+$("#bFile").onclick=()=>browse("file");$("#bDir").onclick=()=>browse("folder");
+$("#bScan").onclick=scan;
+$("#path").onkeydown=e=>{if(e.key==="Enter"){S.path=e.target.value.trim().replace(/^"|"$/g,"");S.cur=null;scan()}};
+$("#files").onclick=e=>{const f=e.target.closest(".f");if(f)showFile(f.dataset.p)};
+$("#rowsT").onclick=e=>{const t=e.target.closest("tr");if(t&&t.dataset.p)showFile(t.dataset.p,+t.dataset.l)};
+$("#thr").oninput=e=>$("#thrv").textContent=(+e.target.value).toFixed(2);
+$("#thr").onchange=scan;
+$("#rules").onchange=()=>{$("#thr").disabled=$("#rules").checked;scan()};
+$("#model").onchange=async()=>{await loadInfo(true);scan()};
+$("#bWatch").onclick=()=>{
+  if(S.watch){clearInterval(S.watch);S.watch=null;$("#bWatch").textContent="Watch mode: off";$("#bWatch").classList.remove("on");return status("Watch mode off")}
+  if(!S.path)return status("Choose a file or folder before enabling watch mode",1);
+  $("#bWatch").textContent="Watch mode: on";$("#bWatch").classList.add("on");status("Watching "+S.path);
+  S.watch=setInterval(async()=>{if(S.busy)return;try{const r=await api("/api/sig?path="+encodeURIComponent(S.path));
+    if(r.sig&&S.sig&&r.sig!==S.sig){S.sig=r.sig;await scan();status("Change detected, rescanned at "+now())}}catch(e){}},600)};
+loadInfo(true).catch(e=>status(e.message,1));
+</script>
+</body>
+</html>
